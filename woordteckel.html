@@ -1,0 +1,838 @@
+<!doctype html>
+<html lang="nl">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no" />
+  <title>Maria's Woordteckel</title>
+  <style>
+:root{
+  --bg1:#2b1710;
+  --bg2:#7a4a24;
+  --panel:rgba(255,244,224,0.08);
+  --panel-strong:rgba(255,244,224,0.14);
+  --accent:#e0923e;
+  --accent2:#c0492f;
+  --ring:#f4d9a0;
+  --ring-dark:#a9702f;
+  --text:#fff3e0;
+  --muted:#e3c199;
+  --good:#3ddc97;
+  --bad:#ff5f7e;
+}
+
+*{box-sizing:border-box}
+html,body{height:100%}
+body{
+  margin:0;
+  font-family:'Segoe UI',system-ui,-apple-system,Roboto,'Helvetica Neue',Arial,sans-serif;
+  background:radial-gradient(circle at 20% -10%, #6b3d1f 0%, transparent 55%),
+             radial-gradient(circle at 100% 10%, #e0923e 0%, transparent 45%),
+             linear-gradient(160deg, var(--bg1) 0%, var(--bg2) 100%);
+  background-attachment:fixed;
+  color:var(--text);
+  min-height:100vh;
+  overflow-x:hidden;
+}
+
+.hidden{display:none !important}
+
+.screen{min-height:100vh;display:flex;align-items:center;justify-content:center;padding:24px 16px}
+
+/* ---------- Menu ---------- */
+.menu-card{
+  max-width:420px;
+  width:100%;
+  text-align:center;
+  background:var(--panel);
+  backdrop-filter:blur(14px);
+  border:1px solid rgba(255,255,255,0.18);
+  border-radius:24px;
+  padding:36px 28px;
+  box-shadow:0 20px 60px rgba(0,0,0,0.35);
+}
+.menu-card h1{
+  margin:0 0 6px;
+  font-size:2.2rem;
+  letter-spacing:0.5px;
+  font-weight:800;
+}
+.menu-card h1 .accent{color:var(--accent)}
+.tagline{color:var(--muted);margin:0 0 26px;font-size:0.98rem;line-height:1.4}
+.buttons{display:flex;flex-direction:column;gap:12px}
+.diff-btn{
+  display:flex;
+  flex-direction:column;
+  align-items:flex-start;
+  gap:2px;
+  border:0;
+  border-radius:14px;
+  padding:14px 18px;
+  cursor:pointer;
+  background:linear-gradient(120deg, var(--accent), var(--accent2));
+  color:#2b1710;
+  font-weight:700;
+  transition:transform .12s ease, box-shadow .12s ease;
+  box-shadow:0 6px 18px rgba(192,73,47,0.3);
+}
+.diff-btn:hover{transform:translateY(-2px);box-shadow:0 10px 24px rgba(192,73,47,0.4)}
+.diff-btn:active{transform:translateY(0)}
+.diff-title{font-size:1.1rem}
+.diff-sub{font-size:0.8rem;font-weight:600;opacity:0.75}
+.note{color:var(--muted);font-size:0.78rem;margin-top:22px;line-height:1.4}
+
+/* ---------- Game screen ---------- */
+#game{max-width:480px;margin:0 auto;width:100%;padding:14px 14px 28px;min-height:100vh;display:flex;flex-direction:column}
+
+header{display:flex;align-items:center;gap:12px;padding:6px 2px 4px}
+.icon-btn{
+  width:40px;height:40px;border-radius:50%;border:0;cursor:pointer;
+  background:var(--panel-strong);color:var(--text);font-size:1.1rem;
+  display:flex;align-items:center;justify-content:center;flex:0 0 auto;
+}
+.progress{flex:1;display:flex;align-items:center;gap:10px}
+.progress-bar{flex:1;height:10px;border-radius:999px;background:rgba(255,255,255,0.15);overflow:hidden}
+.progress-fill{height:100%;width:0;background:linear-gradient(90deg,var(--accent),var(--good));transition:width .3s ease}
+#progress-text{font-size:0.85rem;font-weight:700;color:var(--muted);white-space:nowrap}
+
+#found-row{
+  display:flex;flex-wrap:wrap;gap:8px;justify-content:center;
+  margin:14px 0 6px;padding:10px;border-radius:16px;
+  background:var(--panel);border:1px solid rgba(255,255,255,0.12);
+  max-height:34vh;overflow-y:auto;
+}
+.pill{
+  padding:7px 12px;border-radius:999px;font-weight:700;letter-spacing:2px;
+  font-size:0.82rem;background:rgba(255,255,255,0.08);color:var(--muted);
+  border:1px solid rgba(255,255,255,0.12);
+}
+.pill.found{
+  background:linear-gradient(120deg, var(--good), #1fb984);
+  color:#052e21;letter-spacing:1px;
+  animation:pop .35s ease;
+}
+.pill.hinted{
+  background:rgba(255,179,71,0.18);
+  border-color:rgba(255,179,71,0.5);
+  color:var(--accent);
+}
+@keyframes pop{0%{transform:scale(0.7);opacity:0}60%{transform:scale(1.08)}100%{transform:scale(1);opacity:1}}
+
+main{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:18px}
+
+#current-word{
+  min-height:2.2rem;font-size:1.8rem;font-weight:800;letter-spacing:4px;
+  color:var(--accent);text-shadow:0 2px 12px rgba(255,179,71,0.5);
+}
+
+#ring-wrap{
+  position:relative;
+  width:min(84vw, 340px);
+  height:min(84vw, 340px);
+  touch-action:none;
+  user-select:none;
+}
+#chain-svg{position:absolute;inset:0;width:100%;height:100%;pointer-events:none;overflow:visible}
+.track{fill:none;stroke:rgba(255,255,255,0.18);stroke-width:3;stroke-dasharray:2 10;stroke-linecap:round}
+.chain-line{
+  fill:none;stroke:var(--accent);stroke-width:6;stroke-linecap:round;stroke-linejoin:round;
+  opacity:0.9;filter:drop-shadow(0 0 6px rgba(255,179,71,0.6));
+}
+
+#letters-circle{position:absolute;inset:0;width:100%;height:100%}
+.bead{
+  position:absolute;
+  border-radius:50%;
+  display:flex;align-items:center;justify-content:center;
+  background:radial-gradient(circle at 32% 28%, #fff7e6, var(--ring) 55%, var(--ring-dark) 100%);
+  color:#4a2c00;
+  font-weight:800;
+  cursor:pointer;
+  box-shadow:0 4px 10px rgba(0,0,0,0.35), inset 0 -3px 6px rgba(0,0,0,0.15);
+  touch-action:none;
+  user-select:none;
+  transition:transform .12s ease, box-shadow .12s ease;
+  z-index:2;
+}
+.bead:active{transform:scale(0.94)}
+.bead.selected{
+  background:radial-gradient(circle at 32% 28%, #fff, var(--accent) 55%, var(--accent2) 100%);
+  color:#3a0d1c;
+  box-shadow:0 0 0 3px rgba(255,255,255,0.55), 0 6px 14px rgba(192,73,47,0.5);
+}
+.bead.active{transform:scale(1.1)}
+
+.btns{display:flex;gap:10px;flex-wrap:wrap;justify-content:center}
+.btns button{
+  border:0;border-radius:12px;padding:12px 18px;font-weight:700;cursor:pointer;
+  font-size:0.92rem;
+}
+#clear{background:rgba(255,255,255,0.12);color:var(--text)}
+#submit{background:linear-gradient(120deg,var(--accent),var(--accent2));color:#2b1710}
+.secondary-btn{background:rgba(255,255,255,0.08);color:var(--muted);border:1px solid rgba(255,255,255,0.18) !important}
+
+.flash{
+  min-height:1.2rem;font-size:0.9rem;font-weight:700;color:var(--muted);
+  opacity:0;transition:opacity .25s ease;margin:0;
+}
+.flash.show{opacity:1}
+
+/* ---------- Win overlay ---------- */
+.overlay{
+  position:fixed;inset:0;background:rgba(20,10,4,0.72);backdrop-filter:blur(4px);
+  display:flex;align-items:center;justify-content:center;padding:20px;z-index:10;
+}
+.win-card{
+  background:linear-gradient(160deg,#4a2a14,#8a5426);
+  border:1px solid rgba(255,255,255,0.2);
+  border-radius:20px;padding:32px 26px;max-width:360px;width:100%;text-align:center;
+  box-shadow:0 20px 60px rgba(0,0,0,0.5);
+}
+.win-card h2{margin:0 0 10px;font-size:1.5rem}
+.win-card p{color:var(--muted);margin:0 0 22px;line-height:1.4}
+.win-card button{
+  width:100%;border:0;border-radius:12px;padding:12px;font-weight:700;cursor:pointer;
+  margin-bottom:10px;font-size:0.95rem;
+}
+#win-next{background:linear-gradient(120deg,var(--accent),var(--accent2));color:#2b1710}
+#win-menu.secondary{background:rgba(255,255,255,0.12);color:var(--text)}
+
+.dachshund{width:min(70%, 220px);height:auto;display:block;margin:0 auto 8px}
+
+@media (max-width:420px){
+  .menu-card{padding:28px 20px}
+  .menu-card h1{font-size:1.9rem}
+}
+  </style>
+</head>
+<body>
+  <div id="menu" class="screen">
+    <div class="menu-card">
+      <svg class="dachshund" viewBox="0 0 250 105" aria-hidden="true">
+        <path d="M20 58 Q4 42 16 24" stroke="#5b3a29" stroke-width="8" fill="none" stroke-linecap="round"/>
+        <ellipse cx="120" cy="64" rx="85" ry="24" fill="#c9873f"/>
+        <ellipse cx="120" cy="72" rx="80" ry="12" fill="#b97a34"/>
+        <rect x="52" y="80" width="11" height="21" rx="5.5" fill="#5b3a29"/>
+        <rect x="84" y="82" width="11" height="21" rx="5.5" fill="#5b3a29"/>
+        <rect x="150" y="82" width="11" height="21" rx="5.5" fill="#5b3a29"/>
+        <rect x="182" y="80" width="11" height="21" rx="5.5" fill="#5b3a29"/>
+        <circle cx="205" cy="46" r="23" fill="#c9873f"/>
+        <ellipse cx="196" cy="58" rx="10" ry="23" fill="#5b3a29" transform="rotate(18 196 58)"/>
+        <ellipse cx="229" cy="51" rx="15" ry="10" fill="#e0a868"/>
+        <circle cx="241" cy="51" r="4" fill="#2b1710"/>
+        <circle cx="213" cy="40" r="3" fill="#2b1710"/>
+      </svg>
+      <h1>Maria's Woord<span class="accent">teckel</span></h1>
+      <p class="tagline">Hoi Maria Claes! 🐾 Tik of sleep letters in willekeurige volgorde om woorden te vormen.</p>
+      <div class="buttons">
+        <button class="diff-btn" data-count="4">
+          <span class="diff-title">4 letters</span>
+          <span class="diff-sub">Pup 🐾</span>
+        </button>
+        <button class="diff-btn" data-count="5">
+          <span class="diff-title">5 letters</span>
+          <span class="diff-sub">Teckel 🐾🐾</span>
+        </button>
+        <button class="diff-btn" data-count="6">
+          <span class="diff-title">6 letters</span>
+          <span class="diff-sub">Opa-teckel 🐾🐾🐾</span>
+        </button>
+      </div>
+      <p class="note">Geen server nodig — open dit bestand in je browser. Werkt volledig offline.</p>
+    </div>
+  </div>
+
+  <div id="game" class="screen hidden">
+    <header>
+      <button id="back" class="icon-btn" aria-label="Terug naar menu">←</button>
+      <div class="progress">
+        <div class="progress-bar"><div id="progress-fill" class="progress-fill"></div></div>
+        <span id="progress-text">0 / 0</span>
+      </div>
+      <button id="new" class="icon-btn" aria-label="Nieuwe puzzel">↻</button>
+    </header>
+
+    <div id="found-row"></div>
+
+    <main>
+      <div id="current-word">&nbsp;</div>
+
+      <div id="ring-wrap">
+        <svg id="chain-svg"></svg>
+        <div id="letters-circle"></div>
+      </div>
+
+      <div class="btns">
+        <button id="clear">Wis</button>
+        <button id="hint" class="secondary-btn">Hint</button>
+        <button id="submit">Controleer</button>
+      </div>
+
+      <p id="flash-msg" class="flash"></p>
+    </main>
+
+    <div id="win-overlay" class="overlay hidden">
+      <div class="win-card">
+        <h2>Goed gedaan, Maria! 🐕🎉</h2>
+        <p id="win-text"></p>
+        <button id="win-next">Volgende puzzel</button>
+        <button id="win-menu" class="secondary">Terug naar menu</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+// words.js — 2000 veelvoorkomende Nederlandse woorden van 3 t/m 6 letters.
+// Volledig offline: geen netwerkverzoeken nodig. Samengesteld uit een
+// Nederlandse spellingslijst (Hunspell nl_NL) en gefilterd op alledaags
+// woordgebruik (afkortingen, namen, vreemde/archaische termen en grove
+// taal zijn zoveel mogelijk verwijderd).
+window.WORDS = [
+  "aagt", "aal", "aan", "aap", "aard", "aarde", "aars", "aas", "abc", "abt",
+  "acacia", "accu", "acht", "achtte", "acid", "acne", "acteur", "actie", "adel", "adem",
+  "ademen", "adept", "ader", "adres", "afbel", "afbet", "afblok", "afdam", "affuit", "afhap",
+  "afhouw", "afijn", "afris", "afroep", "afslag", "aftrap", "afvel", "afvoer", "afzend", "afzuig",
+  "agaat", "agave", "aha", "aker", "akker", "akst", "alg", "all", "aller", "alpien",
+  "alree", "als", "alt", "alweer", "amai", "amant", "amerij", "amice", "amigo", "amoebe",
+  "amper", "angst", "animus", "ankert", "appel", "april", "arbo", "are", "area", "areaal",
+  "arend", "argot", "ark", "arm", "armen", "armst", "artes", "askar", "aslade", "asman",
+  "atlas", "auto", "avond", "awel", "baak", "baard", "baasde", "babe", "babok", "baby",
+  "bad", "badjas", "bak", "bakken", "bakker", "bal", "balkje", "balkon", "banaan", "banaat",
+  "band", "banen", "bang", "bank", "baron", "baset", "basket", "bast", "bed", "bedelt",
+  "bedilt", "beeld", "beemd", "been", "beer", "beest", "bef", "beft", "beha", "bekend",
+  "bekist", "bel", "belang", "bemat", "beng", "benijd", "beolie", "beplak", "beraam", "bereik",
+  "berg", "bergop", "bergt", "beril", "besef", "beukt", "beur", "beuren", "beval", "bever",
+  "beween", "bezem", "bezig", "bezink", "bib", "bid", "bie", "bieb", "bieder", "biel",
+  "bier", "bij", "bijna", "bijsta", "bijten", "bijzit", "bik", "bil", "bilden", "biljet",
+  "bind", "binder", "bindt", "bink", "bips", "bit", "bivak", "blaas", "blad", "blaft",
+  "blauw", "blazer", "bleek", "bleu", "blij", "blijde", "blikte", "bloed", "bloem", "blokt",
+  "bluesy", "blus", "bodem", "boei", "boek", "boenen", "boent", "boer", "boerka", "bof",
+  "boksen", "bom", "bompa", "bood", "boom", "boon", "boor", "boos", "boot", "boots",
+  "bord", "bos", "bosgod", "bosui", "bosweg", "bot", "boter", "bouwen", "bowl", "bowlde",
+  "box", "braden", "bramen", "brand", "bras", "braver", "breed", "breken", "brems", "breve",
+  "brief", "bril", "brink", "britst", "broek", "broer", "broes", "brok", "brom", "brood",
+  "broos", "brosse", "brost", "brug", "bruin", "brut", "buddy", "buik", "buisje", "bulgur",
+  "bulkt", "bun", "bunder", "buret", "bus", "bust", "buts", "buur", "buurt", "bvba",
+  "cabrio", "cacao", "cache", "camera", "can", "capita", "cavia", "cel", "cello", "center",
+  "cervix", "chijl", "chili", "choco", "chroma", "cider", "cipier", "circus", "cito", "civet",
+  "claxon", "clinch", "closet", "clown", "coacht", "coatte", "coke", "coltan", "corgi", "corps",
+  "coupe", "croque", "culpa", "cup", "dag", "daghit", "daging", "dahlia", "dak", "dal",
+  "dame", "dammen", "damp", "dan", "dans", "danst", "dar", "darm", "dart", "das",
+  "datum", "dauw", "deck", "deed", "deeg", "deel", "deins", "deken", "dekker", "del",
+  "delers", "delict", "demo", "denk", "denken", "dep", "dertig", "des", "deugd", "deur",
+  "deux", "dia", "dictee", "die", "dief", "diens", "diepe", "diept", "dier", "dierst",
+  "dijk", "dijt", "dik", "dikkig", "dist", "dito", "divan", "dobbel", "dociel", "doek",
+  "does", "dog", "doka", "dokter", "dolce", "dolly", "dom", "domp", "dompig", "don",
+  "donder", "donor", "doods", "doof", "dooi", "dook", "doorn", "dop", "dor", "dorde",
+  "dorren", "doste", "dot", "dotaal", "douche", "dove", "draad", "dragon", "dreg", "drie",
+  "dril", "droef", "droeg", "dromen", "droog", "droom", "droop", "druif", "drum", "dry",
+  "duaal", "duale", "ducht", "duf", "duif", "duig", "duik", "duiker", "duikt", "duim",
+  "duin", "duist", "duiver", "duld", "dun", "duo", "dus", "duur", "duurt", "duwt",
+  "dweil", "echel", "ecu", "eed", "een", "eend", "eenden", "eest", "effen", "egaal",
+  "egel", "eik", "eiker", "eiland", "eiste", "elf", "elfde", "elk", "emmer", "empire",
+  "enkel", "erbij", "erfden", "erken", "ermee", "erom", "erts", "eruit", "erving", "ervoer",
+  "escape", "escort", "eten", "ette", "ezel", "facit", "fade", "fading", "falie", "farm",
+  "farma", "faro", "fax", "fazant", "fecaal", "feest", "feit", "ferro", "fezzen", "fiets",
+  "fikst", "file", "film", "fint", "firn", "fitis", "fjord", "flanel", "flat", "flens",
+  "flipte", "flits", "flitst", "flitte", "floss", "flow", "fluit", "folk", "food", "fop",
+  "fopt", "force", "form", "fort", "forti", "forum", "fossa", "foto", "freon", "fries",
+  "frigo", "fuik", "full", "fut", "gaan", "gaap", "gaapt", "gaat", "gaf", "gag",
+  "gaine", "gajes", "gal", "gannef", "gans", "gap", "gapen", "garf", "gaspit", "gaten",
+  "gebak", "gebist", "gedist", "gedund", "geel", "gehad", "geilen", "geit", "gek", "geklop",
+  "geld", "geldla", "geleed", "gelegd", "gelei", "gelode", "geluw", "gember", "gene", "geneer",
+  "genet", "genoom", "gerst", "gesp", "getal", "getemd", "geuite", "geur", "gevat", "geven",
+  "gevoel", "gevuld", "gewaag", "gewag", "gewamd", "gewas", "gewei", "gewet", "gewin", "gewis",
+  "gewist", "gewoon", "gezond", "gibus", "gierig", "gieten", "giften", "gig", "gil", "ginder",
+  "girant", "gis", "git", "gitaar", "glans", "glas", "gleuf", "glim", "glipt", "glui",
+  "god", "goeie", "goh", "gojs", "gok", "gokten", "golf", "gong", "gons", "gooien",
+  "gooit", "goot", "gordel", "gore", "goth", "goud", "graaf", "graag", "gras", "graver",
+  "grijp", "grijs", "grill", "groei", "groen", "grol", "grond", "groot", "grot", "gsm",
+  "guano", "guerre", "guller", "gulpt", "gum", "gumt", "gun", "guppy", "gure", "gym",
+  "haagt", "haai", "haakt", "haan", "haar", "haas", "haat", "had", "hadden", "haft",
+  "hagel", "haha", "hak", "haken", "hal", "halen", "hamer", "hand", "hap", "haper",
+  "hapte", "hark", "harp", "hars", "harst", "hart", "haven", "heao", "heb", "hecht",
+  "heeft", "heg", "hei", "heier", "heiig", "hek", "hel", "helde", "helpen", "helst",
+  "helt", "hemd", "herder", "herfst", "herig", "heros", "hert", "hertog", "herval", "hes",
+  "heser", "heuvel", "hiaat", "hiel", "hierna", "hij", "hik", "hinder", "hing", "hockey",
+  "hoe", "hoed", "hoekt", "hoempa", "hoepla", "hoeve", "hoi", "hok", "hol", "hom",
+  "hond", "honig", "honing", "hoog", "hoogst", "hoop", "hoor", "hoorn", "hop", "hoppe",
+  "hordt", "horeca", "horen", "hort", "host", "hostie", "hot", "hotel", "hots", "hour",
+  "hout", "hst", "huid", "huif", "huil", "huilen", "huis", "hult", "humaan", "humane",
+  "humde", "humeur", "humor", "hun", "hunne", "hup", "hups", "huw", "huwden", "hydro",
+  "hype", "hyper", "ibis", "icon", "icoon", "ideaal", "idee", "idiot", "idylle", "iebel",
+  "iemker", "iep", "ijlen", "ijs", "ijsde", "ijzel", "ijzer", "imam", "inboek", "indijk",
+  "indik", "indult", "inent", "inham", "inkeer", "inkt", "inleid", "inpak", "insect", "intyp",
+  "invet", "inzend", "inzet", "jaagde", "jaar", "jabot", "jacht", "jager", "jak", "jalap",
+  "jampot", "jan", "jas", "jat", "java", "jeans", "jee", "jeint", "jen", "jeu",
+  "jeune", "jive", "joh", "join", "jol", "jolt", "jong", "jou", "jour", "judas",
+  "judo", "juf", "juk", "jure", "jurk", "jus", "just", "kaai", "kaak", "kaart",
+  "kaas", "kaatst", "kabel", "kabots", "kader", "kaf", "kafka", "kafzak", "kalfje", "kalig",
+  "kalk", "kam", "kamer", "kanaat", "kano", "kant", "kante", "kap", "kapper", "kar",
+  "karaf", "karate", "karton", "kassa", "kassen", "kast", "kat", "katoen", "katrol", "kauwen",
+  "kca", "keel", "keept", "kees", "keg", "keizer", "kelder", "kelp", "kennen", "kerk",
+  "kerkje", "kern", "kers", "kets", "keuken", "keurs", "keutel", "kever", "kickt", "kielde",
+  "kies", "kieuw", "kiezel", "kijken", "kikker", "kil", "kilde", "kille", "kim", "kin",
+  "kind", "kink", "kip", "kirren", "kis", "klaar", "klager", "klank", "klas", "klauw",
+  "kleef", "klei", "klein", "klepel", "kleun", "kleur", "klok", "klont", "klost", "knakt",
+  "knakte", "knalt", "knap", "knar", "kneu", "knie", "knobel", "knok", "knoop", "knop",
+  "knus", "kocht", "koe", "kof", "koffer", "kogel", "kok", "koken", "kolen", "kolf",
+  "kompas", "kon", "konijn", "koning", "kook", "kool", "koos", "kop", "kopen", "koper",
+  "kopper", "koraal", "korf", "kornis", "korrel", "kort", "kortte", "koud", "koude", "kraag",
+  "kraai", "krab", "krabt", "kram", "kranig", "kranst", "krant", "krap", "krapte", "kras",
+  "kraste", "kreeft", "krijn", "krijt", "kudde", "kuif", "kuifde", "kuit", "kuiter", "kul",
+  "kunst", "kussen", "kust", "kusten", "kwaal", "kwal", "kwips", "laag", "laan", "laars",
+  "labeur", "lachen", "lag", "laken", "laks", "lakst", "lakte", "lam", "lama", "lamp",
+  "landen", "lang", "lap", "lapel", "lapten", "large", "larie", "larynx", "lat", "laten",
+  "latent", "latin", "lawn", "lease", "leed", "leedst", "leemt", "leer", "leeuw", "lef",
+  "lego", "leken", "lel", "lelijk", "lenen", "leners", "lengt", "lente", "lep", "leper",
+  "lepper", "leraar", "leren", "les", "lest", "letten", "lettre", "leur", "leut", "leven",
+  "lever", "lexica", "lezen", "libel", "licht", "lied", "liefde", "liep", "liepen", "lift",
+  "ligbox", "liggen", "lijm", "lijn", "likt", "linde", "links", "linnen", "lip", "lispen",
+  "lispt", "listen", "lobber", "loc", "loef", "loelav", "lof", "loge", "logt", "lokker",
+  "lol", "lom", "long", "lood", "loods", "loop", "lopen", "lor", "lori", "lorrig",
+  "los", "losten", "lot", "lota", "loyaal", "lozen", "lucht", "luid", "luifel", "luikt",
+  "luimde", "luit", "lunch", "lunst", "lupus", "lurkt", "lurven", "luwde", "luxe", "lynx",
+  "maag", "maagd", "maaide", "maan", "maand", "macht", "madam", "maft", "main", "maken",
+  "malie", "malm", "man", "mand", "manege", "maniok", "mans", "map", "mark", "markt",
+  "match", "medica", "medium", "meepak", "meer", "meerde", "meet", "melk", "memo", "mende",
+  "mengen", "menig", "mening", "mentor", "menuet", "mepper", "merci", "merel", "merg", "mes",
+  "met", "metaal", "metro", "metsen", "micro", "middag", "mier", "miezer", "mij", "mikt",
+  "mille", "mimici", "minuut", "mis", "mist", "mode", "moe", "moed", "moede", "moeder",
+  "moeial", "moelie", "moffel", "moffin", "mok", "mol", "molen", "molmig", "mom", "mond",
+  "monist", "monnik", "mooi", "moot", "moren", "morgen", "morsig", "morst", "mos", "mossel",
+  "mot", "motel", "motet", "motor", "motto", "mouw", "muf", "mug", "muil", "muis",
+  "mulo", "multi", "munt", "muon", "murwt", "mus", "muts", "muur", "muziek", "naad",
+  "naai", "naald", "naast", "nacht", "nageef", "nagel", "nagelt", "nam", "naoogt", "nap",
+  "napluk", "nappa", "nat", "natie", "natijd", "nauw", "nawee", "nebje", "neet", "negen",
+  "nek", "nemen", "nemer", "nep", "nerd", "neren", "nest", "net", "neuron", "neus",
+  "neusde", "neuzel", "nevel", "niche", "nick", "nier", "nieuw", "nimf", "nisbus", "noemen",
+  "nog", "nokt", "non", "noot", "nop", "nopen", "nor", "nou", "nufje", "nurks",
+  "nut", "nylon", "oefen", "oeros", "oester", "offday", "offer", "ohm", "ojief", "oker",
+  "oma", "ombouw", "omdoe", "ome", "omega", "omelet", "omspit", "omwond", "omzei", "omzet",
+  "ondank", "onnut", "onrein", "onrijp", "ontwei", "onvrij", "onzent", "oog", "oogst", "ooit",
+  "ook", "oor", "oorbel", "oosten", "opa", "opduw", "openen", "ophad", "opjut", "opkap",
+  "opleg", "opprop", "optici", "optrok", "opvis", "opwek", "orakel", "oranje", "orgel", "orka",
+  "orkaan", "otter", "oud", "ouder", "paard", "paars", "paas", "pacet", "pad", "pafte",
+  "pais", "pak", "pakbon", "palmt", "pan", "panlat", "pap", "papier", "papil", "pappen",
+  "park", "pasje", "pasta", "pat", "paus", "pauze", "pech", "pee", "peer", "peg",
+  "pegel", "pels", "pen", "pens", "pensum", "peper", "per", "perkt", "persen", "perst",
+  "pesten", "pet", "peuk", "peul", "piano", "pias", "pica", "piekt", "piezel", "pil",
+  "piloot", "pince", "pint", "plaag", "plag", "plan", "plant", "plein", "plekte", "plenum",
+  "plets", "ploeg", "plok", "podium", "poelje", "poenig", "poesje", "poet", "pogo", "pokt",
+  "pokte", "pols", "pompen", "pons", "pooler", "poort", "poot", "pop", "por", "porie",
+  "port", "pose", "potten", "pozen", "praten", "preses", "prijs", "prins", "prof", "propte",
+  "prove", "pruik", "pruim", "prut", "puft", "pui", "puimt", "puin", "puit", "pul",
+  "punk", "pup", "pupil", "put", "puts", "puzzel", "pyjama", "quark", "que", "quote",
+  "raad", "raam", "raamde", "raamt", "raast", "raden", "radio", "radix", "raket", "raki",
+  "ramin", "ramp", "rap", "rapen", "rapier", "raseer", "rasser", "rasta", "rat", "reces",
+  "ree", "regen", "reggen", "regio", "regt", "rei", "reiger", "reik", "reil", "rekten",
+  "rem", "remde", "remmen", "rende", "rendez", "renet", "rennen", "retro", "reuk", "reuzel",
+  "rib", "ribose", "ridder", "rider", "riek", "riem", "riet", "rif", "rij", "rijden",
+  "rijk", "rijmen", "rijp", "rijst", "ril", "rimpel", "ring", "ringde", "ringel", "riool",
+  "rit", "ritme", "rits", "rivaal", "rivier", "rob", "robe", "rode", "roe", "roei",
+  "roemen", "roep", "roer", "roeren", "rogge", "rok", "rokade", "roken", "rolt", "rom",
+  "romp", "rong", "rood", "roofde", "rook", "room", "roomde", "rotan", "roteer", "rots",
+  "rouge", "route", "roux", "roze", "rubber", "rug", "rugzak", "rui", "ruik", "ruiken",
+  "rulle", "rum", "rustte", "ruw", "ruwt", "sabel", "safer", "sajet", "sang", "sas",
+  "saus", "sax", "schaap", "schaar", "schaf", "schar", "scheef", "schelp", "schep", "scherm",
+  "schijf", "schip", "schoen", "school", "schoon", "schrab", "schrik", "schub", "schulp", "schurk",
+  "schuur", "scoren", "secure", "semi", "seniel", "server", "set", "shag", "shift", "shirt",
+  "sijs", "sik", "sikkel", "simt", "sip", "sirih", "sis", "sistra", "sit", "sjaal",
+  "sjah", "sjako", "sjofar", "sjonge", "ska", "ski", "sla", "slaan", "slaap", "slab",
+  "slager", "slak", "slang", "slapen", "slappe", "slede", "slee", "slik", "slim", "slof",
+  "slofst", "slok", "slonk", "sloot", "slop", "slot", "slum", "smal", "smalt", "smient",
+  "smuk", "snack", "snapt", "snavel", "sneden", "sneeuw", "snel", "sneu", "snib", "snibde",
+  "snit", "snor", "soa", "soek", "soep", "soepel", "soes", "soit", "sok", "soleil",
+  "som", "somde", "somt", "souper", "spa", "spade", "sparen", "spekt", "spel", "spelen",
+  "speur", "spiekt", "spier", "spin", "spion", "spons", "spoor", "sprits", "spui", "spuw",
+  "spuwt", "staal", "staan", "staart", "stage", "stalk", "stalt", "stam", "stank", "stanza",
+  "stee", "steeds", "steeg", "steen", "steil", "stek", "steno", "step", "stept", "ster",
+  "sterk", "stevig", "sticht", "stinkt", "stoel", "stoep", "stof", "stolde", "stoor", "stop",
+  "storax", "storm", "stouw", "straat", "strand", "streak", "streed", "streek", "stres", "strik",
+  "stro", "struik", "stuc", "stug", "stugge", "stuit", "stunt", "stuur", "succes", "suiker",
+  "sul", "sus", "sushi", "taai", "taak", "taande", "tab", "tafel", "taiga", "tak",
+  "takt", "takte", "talaan", "tam", "tamp", "tand", "tang", "tank", "tap", "tas",
+  "taupe", "taxi", "teder", "teen", "teert", "tegen", "tegoed", "teil", "telen", "tellen",
+  "tem", "tempex", "tennis", "tent", "tepel", "terg", "tergen", "teugel", "thyrs", "tien",
+  "tijg", "tijger", "tijgt", "tiksel", "tin", "tink", "tippel", "tiran", "titel", "tjoept",
+  "tjok", "tob", "toe", "toemat", "toesla", "toesta", "toeter", "toets", "toezag", "toezeg",
+  "tof", "tol", "tomaat", "tonde", "toneel", "tong", "tont", "tonus", "toog", "toon",
+  "toot", "top", "toque", "tor", "toren", "tori", "toss", "toto", "tout", "touw",
+  "traag", "traan", "tracht", "tram", "trap", "trast", "trauma", "trein", "trekos", "tremel",
+  "treur", "trim", "trok", "tromt", "tronk", "troop", "trots", "trouw", "truc", "trui",
+  "tuin", "tukke", "tulp", "tuner", "tunnel", "turf", "turk", "turnen", "twaalf", "twee",
+  "tweede", "twen", "typ", "uil", "ulster", "uraan", "uren", "urine", "usance", "uso",
+  "utopie", "uur", "vaar", "vaas", "vaat", "vacht", "vader", "val", "valk", "vallei",
+  "vallen", "van", "vangen", "varken", "veelal", "veer", "veert", "veest", "veiler", "veilig",
+  "vel", "veld", "velijn", "ven", "verdor", "verg", "vergun", "verwek", "verzak", "vet",
+  "veter", "vetlok", "vettig", "via", "vient", "vier", "vijf", "vil", "vilt", "vin",
+  "vinden", "vinder", "vinger", "viool", "vip", "vis", "visser", "vivat", "vlaag", "vlees",
+  "vlezig", "vlieg", "vlij", "vlo", "vloed", "vloer", "vloog", "vlos", "vlot", "vloten",
+  "vod", "voel", "voelen", "voet", "voeter", "vogel", "volkje", "voluit", "vonder", "vonkte",
+  "voois", "voorin", "vorst", "vort", "vos", "vota", "vragen", "vrank", "vroeg", "vrouw",
+  "vrucht", "vuil", "vurig", "vuur", "vzw", "waak", "waal", "waan", "waard", "wad",
+  "waden", "wadjan", "wagen", "wakke", "wakker", "waling", "walkt", "walmt", "walvis", "wamt",
+  "wanbof", "wanen", "wang", "ware", "warm", "warren", "wasem", "wasjes", "wassen", "water",
+  "wauwel", "wave", "wedde", "wee", "week", "weg", "wegsla", "wegvak", "wel", "welk",
+  "welken", "welkte", "welven", "wend", "wens", "werd", "werf", "werk", "werken", "werp",
+  "wesp", "west", "westen", "wet", "weten", "wetten", "wide", "wie", "wiel", "wierig",
+  "wij", "wijl", "wijs", "wijsje", "wik", "wild", "wimper", "win", "wind", "winkel",
+  "winnen", "winter", "wip", "wissen", "wit", "woed", "woede", "woedt", "wokt", "wol",
+  "wolf", "wolk", "wondde", "worg", "worm", "wortel", "wou", "woud", "wrede", "wrens",
+  "wring", "wroet", "wrok", "wuiven", "wulp", "yard", "yelt", "yen", "zaad", "zaag",
+  "zaal", "zabbel", "zak", "zamel", "zand", "zanger", "zat", "zeboe", "zebra", "zee",
+  "zeearm", "zeeg", "zeel", "zeeman", "zeen", "zeep", "zeepte", "zeg", "zege", "zeggen",
+  "zegt", "zeloot", "zemen", "zen", "zendt", "zenen", "zeng", "zenuw", "zes", "zeven",
+  "zie", "zied", "ziek", "zieken", "zien", "zier", "zijde", "zijg", "zijgen", "zijl",
+  "zijweg", "zilver", "zin", "zinder", "zing", "zingen", "zit", "zitten", "zoef", "zoeken",
+  "zoetig", "zolder", "zomer", "zon", "zondag", "zonder", "zonk", "zoogde", "zoom", "zoon",
+  "zopie", "zoudt", "zout", "zuiden", "zuig", "zuip", "zurkel", "zus", "zuster", "zwaan",
+  "zwaar", "zwaard", "zwak", "zwart", "zweef", "zweem", "zweet", "zwerk", "zwetst", "zwiep",
+];
+
+// Snelle lookup-set voor het spel.
+window.WORD_SET = new Set(window.WORDS);
+  </script>
+  <script>
+// Woordketting — Spelling-Bee-achtig spel.
+// Letters staan in een cirkel. Tik of sleep ze in WILLEKEURIGE volgorde om
+// een woord te vormen — elke letter-tegel mag per woord maar één keer
+// gebruikt worden. Er is altijd minstens één woord te vinden dat alle
+// letters van de ring gebruikt.
+
+const menu = document.getElementById('menu');
+const game = document.getElementById('game');
+const backBtn = document.getElementById('back');
+const newBtn = document.getElementById('new');
+const clearBtn = document.getElementById('clear');
+const submitBtn = document.getElementById('submit');
+const hintBtn = document.getElementById('hint');
+const ringWrap = document.getElementById('ring-wrap');
+const lettersCircle = document.getElementById('letters-circle');
+const chainSvg = document.getElementById('chain-svg');
+const currentWordEl = document.getElementById('current-word');
+const foundRow = document.getElementById('found-row');
+const progressFill = document.getElementById('progress-fill');
+const progressText = document.getElementById('progress-text');
+const flashMsg = document.getElementById('flash-msg');
+const winOverlay = document.getElementById('win-overlay');
+const winText = document.getElementById('win-text');
+const winNextBtn = document.getElementById('win-next');
+const winMenuBtn = document.getElementById('win-menu');
+
+let chain = ''; // de letters van de ring, één keer elk
+let targets = [];
+let foundSet = new Set();
+let hintedWords = new Set();
+let selection = []; // ring-indices, in tikvolgorde, herhaling toegestaan
+let lastDragIdx = null;
+let dragExtended = false; // true zodra een sleepbeweging een 2e letter heeft toegevoegd
+const PLAYER_NAME = 'Maria Claes';
+let flashTimer = null;
+let difficulty = 4; // aantal letters in de ring: 4, 5 of 6
+
+// ---------- utilities ----------
+function shuffle(arr) {
+  const a = arr.slice();
+  for (let i = a.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [a[i], a[j]] = [a[j], a[i]];
+  }
+  return a;
+}
+
+function letterCounts(word) {
+  const m = {};
+  for (const ch of word) m[ch] = (m[ch] || 0) + 1;
+  return m;
+}
+
+// Een woord past op de ring als elke letter er niet vaker in voorkomt dan
+// er letter-tegels van zijn (elke tegel mag maar één keer gebruikt worden).
+function fitsRing(word, ringCounts) {
+  const need = {};
+  for (const ch of word) {
+    need[ch] = (need[ch] || 0) + 1;
+    if (need[ch] > (ringCounts[ch] || 0)) return false;
+  }
+  return true;
+}
+
+// ---------- puzzle generation ----------
+// Kies een pangram-woord van precies `letterCount` letters. De ring bestaat
+// uit exact die letters (inclusief eventuele dubbele letters). Alle andere
+// te vinden woorden moeten met die letter-tegels te vormen zijn, elke tegel
+// hoogstens één keer.
+function pickTargets(pool, pangramWord, maxTargets) {
+  const rest = pool.filter(w => w !== pangramWord);
+  const picked = [pangramWord];
+  const byLen = {};
+  for (const w of shuffle(rest)) (byLen[w.length] = byLen[w.length] || []).push(w);
+  const lens = Object.keys(byLen).map(Number).sort((a, b) => a - b);
+  let addedAny = true;
+  while (picked.length < maxTargets && addedAny) {
+    addedAny = false;
+    for (const L of lens) {
+      if (picked.length >= maxTargets) break;
+      const arr = byLen[L];
+      if (arr && arr.length > 0) {
+        picked.push(arr.shift());
+        addedAny = true;
+      }
+    }
+  }
+  return picked;
+}
+
+function generatePuzzle(letterCount) {
+  const candidates = shuffle(window.WORDS.filter(w => w.length === letterCount));
+  let best = null;
+
+  for (const pangramWord of candidates) {
+    const ringCounts = letterCounts(pangramWord);
+    const pool = window.WORDS.filter(w => w.length <= letterCount && fitsRing(w, ringCounts));
+    if (pool.length >= 4) {
+      return { letters: shuffle(pangramWord.split('')), targets: pickTargets(pool, pangramWord, 10) };
+    }
+    if (!best || pool.length > best.pool.length) best = { pangramWord, pool };
+  }
+
+  if (best) {
+    return { letters: shuffle(best.pangramWord.split('')), targets: pickTargets(best.pool, best.pangramWord, 10) };
+  }
+  return null;
+}
+
+// ---------- game flow ----------
+document.querySelectorAll('.diff-btn').forEach(b => {
+  b.addEventListener('click', () => {
+    difficulty = Number(b.dataset.count);
+    startPuzzle();
+  });
+});
+backBtn.addEventListener('click', showMenu);
+newBtn.addEventListener('click', startPuzzle);
+clearBtn.addEventListener('click', clearSelection);
+submitBtn.addEventListener('click', submitSelection);
+hintBtn.addEventListener('click', showHint);
+winNextBtn.addEventListener('click', () => { hideWin(); startPuzzle(); });
+winMenuBtn.addEventListener('click', () => { hideWin(); showMenu(); });
+
+function showMenu() { menu.classList.remove('hidden'); game.classList.add('hidden'); }
+function showGame() { menu.classList.add('hidden'); game.classList.remove('hidden'); }
+
+function startPuzzle() {
+  const result = generatePuzzle(difficulty);
+  if (!result) {
+    alert('Kon geen puzzel genereren. Probeer het opnieuw.');
+    return showMenu();
+  }
+  chain = result.letters.join('');
+  targets = result.targets.sort((a, b) => a.length - b.length || a.localeCompare(b));
+  foundSet = new Set();
+  hintedWords = new Set();
+  selection = [];
+  hideWin();
+  renderFoundRow();
+  renderRing();
+  updateProgress();
+  showGame();
+}
+
+// ---------- rendering ----------
+function renderRing() {
+  lettersCircle.innerHTML = '';
+  const n = chain.length;
+  const wrapSize = ringWrap.clientWidth || 320;
+  const radius = wrapSize * 0.34;
+  const center = wrapSize / 2;
+  const beadSize = Math.max(44, Math.min(76, (2 * Math.PI * radius) / n - 8));
+
+  chainSvg.setAttribute('viewBox', `0 0 ${wrapSize} ${wrapSize}`);
+  chainSvg.setAttribute('width', wrapSize);
+  chainSvg.setAttribute('height', wrapSize);
+
+  for (let i = 0; i < n; i++) {
+    const angle = (i / n) * Math.PI * 2 - Math.PI / 2;
+    const x = Math.cos(angle) * radius + center;
+    const y = Math.sin(angle) * radius + center;
+    const bead = document.createElement('div');
+    bead.className = 'bead';
+    bead.textContent = chain[i].toUpperCase();
+    bead.dataset.idx = String(i);
+    bead.style.width = beadSize + 'px';
+    bead.style.height = beadSize + 'px';
+    bead.style.left = `${x - beadSize / 2}px`;
+    bead.style.top = `${y - beadSize / 2}px`;
+    bead.style.fontSize = `${beadSize * 0.42}px`;
+    bead.addEventListener('pointerdown', onBeadPointerDown);
+    lettersCircle.appendChild(bead);
+  }
+  drawTrack(radius, center);
+  renderSelectionVisuals();
+}
+
+function beadCenter(i) {
+  const n = chain.length;
+  const wrapSize = ringWrap.clientWidth || 320;
+  const radius = wrapSize * 0.34;
+  const center = wrapSize / 2;
+  const angle = (i / n) * Math.PI * 2 - Math.PI / 2;
+  return { x: Math.cos(angle) * radius + center, y: Math.sin(angle) * radius + center };
+}
+
+function drawTrack(radius, center) {
+  const ns = 'http://www.w3.org/2000/svg';
+  const existing = chainSvg.querySelector('.track');
+  if (existing) existing.remove();
+  const circle = document.createElementNS(ns, 'circle');
+  circle.setAttribute('class', 'track');
+  circle.setAttribute('cx', center);
+  circle.setAttribute('cy', center);
+  circle.setAttribute('r', radius);
+  chainSvg.insertBefore(circle, chainSvg.firstChild);
+}
+
+function renderSelectionVisuals() {
+  document.querySelectorAll('.bead').forEach(b => {
+    const idx = Number(b.dataset.idx);
+    b.classList.toggle('selected', selection.includes(idx));
+    b.classList.toggle('active', selection.length > 0 && selection[selection.length - 1] === idx);
+  });
+
+  const ns = 'http://www.w3.org/2000/svg';
+  chainSvg.querySelectorAll('polyline.chain-line').forEach(el => el.remove());
+  if (selection.length > 1) {
+    const points = selection.map(i => { const c = beadCenter(i); return `${c.x},${c.y}`; }).join(' ');
+    const poly = document.createElementNS(ns, 'polyline');
+    poly.setAttribute('class', 'chain-line');
+    poly.setAttribute('points', points);
+    chainSvg.appendChild(poly);
+  }
+
+  currentWordEl.textContent = selection.length ? selection.map(i => chain[i].toUpperCase()).join('') : ' ';
+}
+
+function renderFoundRow() {
+  foundRow.innerHTML = '';
+  for (const w of targets) {
+    const pill = document.createElement('div');
+    pill.className = 'pill';
+    pill.dataset.word = w;
+    if (foundSet.has(w)) {
+      pill.textContent = w.toUpperCase();
+      pill.classList.add('found');
+    } else if (hintedWords.has(w)) {
+      pill.textContent = w[0].toUpperCase() + '_'.repeat(w.length - 1);
+      pill.classList.add('hinted');
+    } else {
+      pill.textContent = '_'.repeat(w.length);
+    }
+    foundRow.appendChild(pill);
+  }
+}
+
+function updateProgress() {
+  progressText.textContent = `${foundSet.size} / ${targets.length}`;
+  const pct = targets.length ? (foundSet.size / targets.length) * 100 : 0;
+  progressFill.style.width = pct + '%';
+}
+
+// ---------- selection / interaction ----------
+// Volgorde is vrij, maar elke letter-tegel mag maar één keer in het
+// huidige woord gebruikt worden. Werkt zowel met los tikken als met één
+// doorlopende sleepbeweging van de ene letter naar de andere.
+function tryAdvance(idx) {
+  if (selection.includes(idx)) return false;
+  selection.push(idx);
+  return true;
+}
+
+function onBeadPointerDown(e) {
+  e.preventDefault();
+  const idx = Number(e.currentTarget.dataset.idx);
+  lastDragIdx = idx;
+  dragExtended = false;
+  if (tryAdvance(idx)) renderSelectionVisuals();
+  window.addEventListener('pointermove', onPointerMove);
+  window.addEventListener('pointerup', onPointerUp, { once: true });
+}
+
+function onPointerMove(e) {
+  const target = document.elementFromPoint(e.clientX, e.clientY);
+  const bead = target && target.closest ? target.closest('.bead') : null;
+  if (!bead) return;
+  const idx = Number(bead.dataset.idx);
+  if (idx === lastDragIdx) return;
+  lastDragIdx = idx;
+  if (tryAdvance(idx)) {
+    dragExtended = true;
+    renderSelectionVisuals();
+  }
+}
+
+function onPointerUp() {
+  window.removeEventListener('pointermove', onPointerMove);
+  lastDragIdx = null;
+  // Zodra je stopt met slepen, wordt de selectie meteen gecontroleerd —
+  // bij een foute combinatie wist submitSelection() hem meteen weer.
+  if (dragExtended) submitSelection();
+  dragExtended = false;
+}
+
+function clearSelection() {
+  selection = [];
+  renderSelectionVisuals();
+}
+
+function submitSelection() {
+  if (selection.length < 3) { clearSelection(); return; }
+  const word = selection.map(i => chain[i]).join('');
+  if (targets.includes(word)) {
+    if (foundSet.has(word)) {
+      flash(`Je vond "${word}" al.`);
+    } else {
+      foundSet.add(word);
+      renderFoundRow();
+      updateProgress();
+      if (foundSet.size === targets.length) {
+        setTimeout(showWin, 250);
+      } else {
+        flash('Mooi!');
+      }
+    }
+  } else {
+    flash('Niet correct');
+  }
+  clearSelection();
+}
+
+function showHint() {
+  const candidate = targets.find(w => !foundSet.has(w) && !hintedWords.has(w));
+  if (!candidate) {
+    flash(foundSet.size === targets.length ? 'Alles al gevonden!' : 'Geen hints meer over');
+    return;
+  }
+  hintedWords.add(candidate);
+  renderFoundRow();
+  flash(`Hint: begint met "${candidate[0].toUpperCase()}"`);
+}
+
+function flash(msg) {
+  flashMsg.textContent = msg;
+  flashMsg.classList.add('show');
+  clearTimeout(flashTimer);
+  flashTimer = setTimeout(() => flashMsg.classList.remove('show'), 900);
+}
+
+function showWin() {
+  winText.textContent = `${PLAYER_NAME}, je hebt alle ${targets.length} woorden gevonden met een ring van ${chain.length} letters! Je teckel kwispelt van trots. 🐕`;
+  winOverlay.classList.remove('hidden');
+}
+function hideWin() { winOverlay.classList.add('hidden'); }
+
+window.addEventListener('resize', () => { if (chain) renderRing(); });
+
+showMenu();
+  </script>
+</body>
+</html>
